@@ -28,6 +28,9 @@ security = HTTPBearer()
 
 # Database Helper
 def get_db_connection():
+    db_url = os.environ.get("DATABASE_URL")
+    if db_url:
+        return psycopg2.connect(db_url)
     return psycopg2.connect(
         dbname="survey_db",
         user="postgres",
@@ -35,6 +38,11 @@ def get_db_connection():
         host="localhost",
         port="5432"
     )
+
+@app.on_event("startup")
+def startup_event():
+    from db_init import init_db
+    init_db()
 
 def get_setting(cur, key, default=""):
     cur.execute("SELECT value FROM settings WHERE key = %s", (key,))

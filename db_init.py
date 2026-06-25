@@ -1,16 +1,21 @@
 import psycopg2
+import os
 from passlib.hash import bcrypt
 
 def init_db():
-    print("Connecting to PostgreSQL database 'survey_db'...")
+    print("Connecting to PostgreSQL database...")
+    db_url = os.environ.get("DATABASE_URL")
     try:
-        conn = psycopg2.connect(
-            dbname="survey_db",
-            user="postgres",
-            password="0000",
-            host="localhost",
-            port="5432"
-        )
+        if db_url:
+            conn = psycopg2.connect(db_url)
+        else:
+            conn = psycopg2.connect(
+                dbname="survey_db",
+                user="postgres",
+                password="0000",
+                host="localhost",
+                port="5432"
+            )
         cur = conn.cursor()
         
         # 1. Create tables
