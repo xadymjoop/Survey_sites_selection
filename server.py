@@ -4,7 +4,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel
 import psycopg2
-from passlib.hash import bcrypt
+import bcrypt
 import jwt
 import requests
 import datetime
@@ -106,7 +106,7 @@ def login(data: LoginRequest):
     try:
         cur.execute("SELECT password_hash, role FROM users WHERE username = %s", (data.username,))
         row = cur.fetchone()
-        if not row or not bcrypt.verify(data.password, row[0]):
+        if not row or not bcrypt.checkpw(data.password.encode("utf-8"), row[0].encode("utf-8")):
             raise HTTPException(status_code=400, detail="Nom d'utilisateur ou mot de passe incorrect")
         
         # Generate token
@@ -186,7 +186,7 @@ def create_user(user: UserCreate, payload: dict = Depends(require_admin)):
         if cur.fetchone():
             raise HTTPException(status_code=400, detail="Ce nom d'utilisateur existe déjà")
             
-        password_hash = bcrypt.hash(user.password)
+        password_hash = bcrypt.hashpw(user.password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
         cur.execute("""
             INSERT INTO users (username, password_hash, role)
             VALUES (%s, %s, %s)
@@ -226,7 +226,7 @@ def update_user(user_id: int, user: UserUpdate, payload: dict = Depends(require_
             
         if user.password:
             updates.append("password_hash = %s")
-            params.append(bcrypt.hash(user.password))
+            params.append(bcrypt.hashpw(user.password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8"))
             
         if user.role:
             updates.append("role = %s")

@@ -1,6 +1,6 @@
 import psycopg2
 import os
-from passlib.hash import bcrypt
+import bcrypt
 
 def init_db():
     print("Connecting to PostgreSQL database...")
@@ -47,9 +47,9 @@ def init_db():
         # 2. Seed default users
         print("Seeding users...")
         # admin: admin123
-        admin_hash = bcrypt.hash("admin123")
+        admin_hash = bcrypt.hashpw(b"admin123", bcrypt.gensalt()).decode("utf-8")
         # user: user123
-        user_hash = bcrypt.hash("user123")
+        user_hash = bcrypt.hashpw(b"user123", bcrypt.gensalt()).decode("utf-8")
         
         cur.execute("""
             INSERT INTO users (username, password_hash, role)
