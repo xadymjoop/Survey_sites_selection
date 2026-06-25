@@ -796,21 +796,6 @@ function renderSiteDetails() {
             </div>
         </div>
 
-        <!-- Geographic & Visual Simulation -->
-        <div class="fiche-section">
-            <div class="section-title">📷 Simulation visuelle de Restauration</div>
-            <div class="visual-comparison">
-                <div class="comparison-card">
-                    <img class="comparison-img" src="https://images.unsplash.com/photo-1516026672322-bc52d61a55d5?auto=format&fit=crop&w=400&q=80" alt="État Dégradé">
-                    <div class="comparison-overlay">État Actuel (Terrain Salinisé / Déboisé)</div>
-                </div>
-                <div class="comparison-card">
-                    <img class="comparison-img" src="https://images.unsplash.com/photo-1502082553048-f009c37129b9?auto=format&fit=crop&w=400&q=80" alt="État Restauré">
-                    <div class="comparison-overlay">Projection 5 Ans (Mangrove Restaurée)</div>
-                </div>
-            </div>
-        </div>
-
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:24px;">
             <!-- Eligibility Checklist -->
             <div class="fiche-section">
