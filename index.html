@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Suivi Sélection des Sites de Mangrove - Greenchoice</title>
+    
+    <!-- Leaflet.js Mapping CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    
+    <!-- Custom Page CSS -->
+    <link rel="stylesheet" href="index.css">
+</head>
+<body>
+
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+        <div class="brand">
+            <span class="brand-icon">🌿</span>
+            <div class="brand-title">Greenchoice</div>
+        </div>
+        
+        <ul class="nav-links">
+            <li>
+                <div class="nav-item active" data-view="dashboard">
+                    <span>📊</span> Tableau de Bord
+                </div>
+            </li>
+            <li>
+                <div class="nav-item" data-view="storytelling">
+                    <span>📖</span> Storytelling & Fiches
+                </div>
+            </li>
+            <li>
+                <div class="nav-item" data-view="database">
+                    <span>🗄️</span> Base de Données
+                </div>
+            </li>
+            <li>
+                <div class="nav-item" data-view="connection">
+                    <span>🔄</span> Synchro & Configuration IA
+                </div>
+            </li>
+            <li>
+                <div class="nav-item" data-view="users">
+                    <span>👥</span> Gestion Utilisateurs
+                </div>
+            </li>
+        </ul>
+        
+        <div class="sidebar-footer">
+            <p>Greenchoice Platform</p>
+            <p style="margin-top: 4px; font-size:10px;">Guinea-Bissau Mangroves</p>
+            <button id="btn-logout" class="btn btn-secondary" style="margin-top: 12px; width: 100%; padding: 6px 12px; font-size: 11px; border-color: rgba(248, 113, 113, 0.3); color: var(--danger);">
+                🚪 Déconnexion
+            </button>
+        </div>
+    </aside>
+
+    <!-- Main Content Workspace -->
+    <main class="main-content">
+        <!-- Header -->
+        <header class="header">
+            <h1 class="header-title">Sélection des Sites de Restauration</h1>
+            
+            <div class="sync-status-pill">
+                <span id="status-dot" class="status-dot local"></span>
+                <span id="status-text">Synchronisation...</span>
+            </div>
+        </header>
+
+        <!-- View 1: Executive Dashboard -->
+        <section id="dashboard" class="view-container active">
+            <!-- Top KPIs Row -->
+            <div class="kpi-row">
+                <div class="kpi-card">
+                    <span class="kpi-icon">🌍</span>
+                    <span class="kpi-label">Sites Évalués</span>
+                    <span id="kpi-total-sites" class="kpi-value">0</span>
+                    <span class="kpi-desc">Total des fiches saisies</span>
+                </div>
+                <div class="kpi-card">
+                    <span class="kpi-icon">✓</span>
+                    <span class="kpi-label">Sites Éligibles</span>
+                    <span id="kpi-eligible-sites" class="kpi-value">0</span>
+                    <span class="kpi-desc">Conformes aux 10 critères</span>
+                </div>
+                <div class="kpi-card">
+                    <span class="kpi-icon">⭐</span>
+                    <span class="kpi-label">Sites Sélectionnés</span>
+                    <span id="kpi-selected-sites" class="kpi-value">0</span>
+                    <span class="kpi-desc">Retenus pour restauration</span>
+                </div>
+                <div class="kpi-card">
+                    <span class="kpi-icon">📈</span>
+                    <span class="kpi-label">Taux d'Acceptation</span>
+                    <span id="kpi-selection-rate" class="kpi-value">0%</span>
+                    <span class="kpi-desc">Pourcentage de sites retenus</span>
+                </div>
+                <div class="kpi-card">
+                    <span class="kpi-icon">⚠️</span>
+                    <span class="kpi-label">Difficulté Moyenne</span>
+                    <span id="kpi-avg-difficulty" class="kpi-value">0/15</span>
+                    <span class="kpi-desc">Indice de restorabilité</span>
+                </div>
+            </div>
+
+            <!-- Dashboard Main Section -->
+            <div class="dashboard-grid">
+                <!-- Filters Sidebar -->
+                <div class="filter-card">
+                    <h3 class="filter-title">Filtres et Recherche</h3>
+                    
+                    <div class="filter-group">
+                        <label for="site-search">Rechercher</label>
+                        <input type="text" id="site-search" class="form-input" placeholder="Nom du site, village, secteur...">
+                    </div>
+
+                    <div class="filter-group">
+                        <label for="filter-region">Région</label>
+                        <select id="filter-region" class="form-select">
+                            <option value="">Toutes les régions</option>
+                        </select>
+                    </div>
+
+                    <div class="filter-group">
+                        <label for="filter-status">Statut de Décision</label>
+                        <select id="filter-status" class="form-select">
+                            <option value="">Tous les statuts</option>
+                            <option value="selected">Sélectionné (Oui)</option>
+                            <option value="eligible_not_selected">Éligible non sélectionné</option>
+                            <option value="rejected">Rejeté / Inéligible</option>
+                        </select>
+                    </div>
+
+                    <div class="filter-group">
+                        <label for="filter-difficulty">Difficulté Restorabilité</label>
+                        <select id="filter-difficulty" class="form-select">
+                            <option value="">Toutes les difficultés</option>
+                            <option value="easy">Facile (Score ≤ 8)</option>
+                            <option value="medium">Moyenne (Score 9 - 11)</option>
+                            <option value="hard">Difficile (Score ≥ 12)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Visualization Panel (Map + Charts) -->
+                <div class="visuals-panel">
+                    <!-- GIS Satellite Map -->
+                    <div class="map-container">
+                        <div id="map"></div>
+                    </div>
+
+                    <!-- Side Charts -->
+                    <div class="charts-row">
+                        <!-- Chart 1: Eligibility -->
+                        <div class="chart-card">
+                            <h4 class="chart-title">Éligibilité Réglementaire</h4>
+                            <div class="chart-wrapper">
+                                <canvas id="chart-eligibility"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Chart 2: Selection -->
+                        <div class="chart-card">
+                            <h4 class="chart-title">Sélection Finale du Site</h4>
+                            <div class="chart-wrapper">
+                                <canvas id="chart-status"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- View 2: Storytelling & Fiche Site Details -->
+        <section id="storytelling" class="view-container">
+            <div class="storytelling-grid">
+                <!-- Sidebar Site Selector -->
+                <div class="site-list-card">
+                    <div class="site-list-header">
+                        <input type="text" id="site-search-list" class="site-list-search" placeholder="Rechercher un site..." oninput="document.getElementById('site-search').value = this.value; applyFilters();">
+                    </div>
+                    <div id="site-list-items" class="site-items">
+                        <!-- Dynamic list of sites -->
+                    </div>
+                </div>
+
+                <!-- Site Detailed Sheet -->
+                <div id="fiche-details-container" class="fiche-details">
+                    <!-- Loaded dynamically via app.js -->
+                </div>
+            </div>
+        </section>
+
+        <!-- View 2.5: Database Table Grid View -->
+        <section id="database" class="view-container">
+            <div class="connection-panel" style="max-width: 100%; width: 100%;">
+                <h2 style="font-family:var(--font-heading); color: var(--primary);">Base de Données des Sites Evalués</h2>
+                <p class="connection-desc">
+                    Retrouvez ci-dessous la totalité des données collectées sur le terrain sous forme de tableau interactif, similaire à la grille de données de Survey123.
+                </p>
+                
+                <!-- Database filter bar -->
+                <div class="db-filter-bar" style="display: flex; gap: 16px; margin-bottom: 20px; flex-wrap: wrap; background: rgba(255,255,255,0.02); padding: 16px; border-radius: 8px; border: 1px solid var(--border-color);">
+                    <div style="flex: 1.5; min-width: 200px;">
+                        <label for="db-filter-site" style="display: block; font-size: 12px; font-weight: 600; margin-bottom: 6px; color: var(--text-secondary);">Nom du Site</label>
+                        <input type="text" id="db-filter-site" placeholder="Rechercher par nom de site..." style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-body); color: var(--text-primary); font-size: 13px;">
+                    </div>
+                    <div style="flex: 1; min-width: 180px;">
+                        <label for="db-filter-region" style="display: block; font-size: 12px; font-weight: 600; margin-bottom: 6px; color: var(--text-secondary);">Région</label>
+                        <select id="db-filter-region" style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-body); color: var(--text-primary); font-size: 13px;">
+                            <option value="">Toutes les régions</option>
+                        </select>
+                    </div>
+                    <div style="flex: 1; min-width: 180px;">
+                        <label for="db-filter-village" style="display: block; font-size: 12px; font-weight: 600; margin-bottom: 6px; color: var(--text-secondary);">Village</label>
+                        <select id="db-filter-village" style="width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-body); color: var(--text-primary); font-size: 13px;">
+                            <option value="">Tous les villages</option>
+                        </select>
+                    </div>
+                    <div style="display: flex; align-items: flex-end;">
+                        <button id="btn-db-reset-filters" class="btn btn-secondary" style="padding: 8px 16px; font-size:12px; height: 38px; display: flex; align-items: center; gap: 6px;">
+                            🔄 Réinitialiser
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Export buttons toolbar -->
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; gap:16px;">
+                    <div style="font-size:13px; color:var(--text-secondary);">
+                        Format type Survey123 (Rapports écologiques, indices et géolocalisation)
+                    </div>
+                    <div style="display:flex; gap:12px;">
+                        <button id="btn-export-csv" class="btn btn-primary" style="padding: 8px 16px; font-size:12px; background-color:#10b981; border-color:#10b981;">
+                            📥 Télécharger CSV
+                        </button>
+                        <button id="btn-export-xls" class="btn btn-primary" style="padding: 8px 16px; font-size:12px; background-color:#3b82f6; border-color:#3b82f6;">
+                            📥 Télécharger Excel (XLS)
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Scrollable Table -->
+                <div class="data-table-container" style="max-height: 600px; overflow: auto; border: 1px solid var(--border-color); border-radius: 8px;">
+                    <table class="data-table" style="min-width: 6500px; font-size: 11px;">
+                        <thead style="position: sticky; top: 0; background: var(--bg-card); z-index: 10;">
+                            <tr>
+                                <th style="width: 50px;">ID</th>
+                                <th style="width: 150px;">Nom du Site</th>
+                                <th style="width: 100px;">Date Mission</th>
+                                <th style="width: 120px;">Région</th>
+                                <th style="width: 120px;">Secteur</th>
+                                <th style="width: 120px;">Village</th>
+                                
+                                <!-- Criteria 1 to 10 with Justifications -->
+                                <th style="width: 220px;">Anciennes rizières salinisées ou déboisées sans régénération (C1)</th>
+                                <th style="width: 250px;">Justification C1</th>
+                                <th style="width: 220px;">Dans PN Cacheu/Cantanhez ou périphérie (C2)</th>
+                                <th style="width: 250px;">Justification C2</th>
+                                <th style="width: 220px;">Absence de projet de restauration concurrent (C3)</th>
+                                <th style="width: 250px;">Justification C3</th>
+                                <th style="width: 220px;">Non classé comme « forêt » REDD+ 2011 (C4)</th>
+                                <th style="width: 250px;">Justification C4</th>
+                                <th style="width: 220px;">Abandonné >= 2 ans (aucune activité agricole) (C5)</th>
+                                <th style="width: 250px;">Justification C5</th>
+                                <th style="width: 220px;">Hydrologie défavorable créée par l'homme (C6)</th>
+                                <th style="width: 250px;">Justification C6</th>
+                                <th style="width: 220px;">Mangrove adulte inexistante ou très clairsemée (C7)</th>
+                                <th style="width: 250px;">Justification C7</th>
+                                <th style="width: 220px;">Régénération naturelle absente ou limitée (C8)</th>
+                                <th style="width: 250px;">Justification C8</th>
+                                <th style="width: 220px;">Consentement CLIP signé par la communauté (C9)</th>
+                                <th style="width: 250px;">Justification C9</th>
+                                <th style="width: 220px;">Absence de litige foncier ou d'accès (C10)</th>
+                                <th style="width: 250px;">Justification C10</th>
+                                
+                                <!-- Difficulties with Justifications -->
+                                <th style="width: 80px;">Diff Tech</th>
+                                <th style="width: 250px;">Commentaire Tech</th>
+                                <th style="width: 80px;">Diff Comm</th>
+                                <th style="width: 250px;">Commentaire Comm</th>
+                                <th style="width: 80px;">Diff Accès</th>
+                                <th style="width: 250px;">Commentaire Accès</th>
+                                <th style="width: 80px;">Diff Taille</th>
+                                <th style="width: 250px;">Commentaire Taille</th>
+                                <th style="width: 80px;">Diff Physico</th>
+                                <th style="width: 250px;">Commentaire Physico</th>
+                                
+                                <th style="width: 80px;">Éligible</th>
+                                <th style="width: 100px;">Sélectionné</th>
+                                <th style="width: 250px;">Commentaire Décision</th>
+                                <th style="width: 100px;">Latitude</th>
+                                <th style="width: 100px;">Longitude</th>
+                            </tr>
+                        </thead>
+                        <tbody id="db-table-body">
+                            <!-- Loaded dynamically via app.js -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- View 3: ArcGIS / Survey123 Sync settings -->
+        <section id="connection" class="view-container">
+            <div class="connection-panel">
+                <h2 style="font-family:var(--font-heading); color: var(--primary);">Paramètres de Synchronisation Survey123</h2>
+                
+                <p class="connection-desc">
+                    Cette plateforme se connecte en temps réel aux données collectées sur le terrain via l'application mobile <b>Survey123</b>. 
+                    Les réponses sont enregistrées dans un service d'entités (Feature Layer) hébergé sur ArcGIS Online.
+                </p>
+                
+                <div class="token-guide">
+                    <h4>🗝️ Comment se connecter sans jeton (Token) ?</h4>
+                    <p>Si votre Survey123 est configuré comme <b>public</b>, vous n'avez pas besoin de jeton. Il vous suffit de saisir l'URL du service ci-dessous et de laisser le champ jeton vide. Pour rendre votre Survey123 public :</p>
+                    <ol>
+                        <li>Connectez-vous sur <a href="https://survey123.arcgis.com" target="_blank" style="color:var(--info); text-decoration: underline;">survey123.arcgis.com</a>.</li>
+                        <li>Ouvrez votre enquête, allez dans l'onglet <b>Collaborer</b>.</li>
+                        <li>Dans <b>Partager l'enquête</b> et <b>Partager les données</b>, cochez <b>Tout le monde (public)</b>.</li>
+                        <li><i>Alternativement :</i> Dans ArcGIS Online, recherchez la couche d'entités associée (Feature Layer) et modifiez son partage en <b>Public</b>.</li>
+                    </ol>
+                    
+                    <h4 style="margin-top: 16px;">🔒 Méthode alternative (Couche Privée avec Jeton)</h4>
+                    <p>Si vous préférez garder vos données privées, vous devez générer un jeton temporaire :</p>
+                    <ol>
+                        <li>Allez sur le portail : <a href="https://www.arcgis.com/sharing/rest/generateToken" target="_blank" style="color:var(--info); text-decoration: underline;">ArcGIS Generate Token Portal</a></li>
+                        <li>Saisissez l'URL du service (présente ci-dessous) et générez le jeton.</li>
+                        <li>Copiez-le et collez-le dans le champ "Jeton d'accès (Token)" ci-dessous.</li>
+                    </ol>
+                </div>
+
+                <div class="filter-group">
+                    <label for="arcgis-url" style="font-size:13px; font-weight:600;">URL du Service ArcGIS Feature Layer</label>
+                    <input type="text" id="arcgis-url" class="form-input" placeholder="https://services.arcgis.com/.../FeatureServer">
+                </div>
+
+                <div class="filter-group">
+                    <label for="arcgis-token" style="font-size:13px; font-weight:600;">Jeton d'accès (Token) <i>- Laisser vide si le service est public</i></label>
+                    <input type="password" id="arcgis-token" class="form-input" placeholder="Entrez le jeton ArcGIS Online...">
+                </div>
+
+                <div style="display:flex; gap:16px;">
+                    <button id="btn-test-connection" class="btn btn-primary" style="flex-grow: 1;">
+                        🔄 Tester la connexion & Synchroniser
+                    </button>
+                    <button id="btn-load-mock" class="btn btn-secondary">
+                        🧪 Utiliser les données démo (local)
+                    </button>
+                </div>
+                
+                <p id="connection-status-msg" class="kpi-desc" style="text-align: center; font-size:13px; font-weight:500;"></p>
+                
+                <!-- Configuration de l'IA de Storytelling -->
+                <div class="ai-config-card" style="border: 1px solid var(--border-color); padding: 24px; border-radius: 12px; background: rgba(0,0,0,0.15); display: flex; flex-direction: column; gap: 16px; margin-top: 24px;">
+                    <h3 style="font-family:var(--font-heading); color: var(--primary); display:flex; align-items:center; gap:8px;">✨ Configuration de l'IA de Storytelling</h3>
+                    <p class="connection-desc" style="font-size: 13px; margin: 0;">
+                        Configurez vos clés API pour activer la génération de récits assistée par l'intelligence artificielle (Gemini ou ChatGPT/OpenAI).
+                    </p>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                        <div class="filter-group">
+                            <label for="gemini-key" style="font-size:13px; font-weight:600;">Clé API Gemini (Google AI Studio)</label>
+                            <input type="password" id="gemini-key" class="form-input" placeholder="Clé API Gemini...">
+                        </div>
+                        <div class="filter-group">
+                            <label for="openai-key" style="font-size:13px; font-weight:600;">Clé API OpenAI (ChatGPT)</label>
+                            <input type="password" id="openai-key" class="form-input" placeholder="Clé API OpenAI...">
+                        </div>
+                    </div>
+                    
+                    <div style="display: flex; gap: 16px; align-items: center;">
+                        <button id="btn-save-ai-config" class="btn btn-primary" style="width: 100%;">
+                            💾 Enregistrer la configuration IA
+                        </button>
+                    </div>
+                    <p id="ai-status-msg" class="kpi-desc" style="text-align: center; font-size:13px; font-weight:500; margin: 0;"></p>
+                </div>
+                
+                <div style="margin-top: 24px;">
+                    <h3 style="font-family:var(--font-heading); margin-bottom: 12px; font-size:18px;">Données Chargées en Base</h3>
+                    <div class="data-table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Nom du Site</th>
+                                    <th>Date de Mission</th>
+                                    <th>Région</th>
+                                    <th>Village</th>
+                                    <th>Statut</th>
+                                    <th>Difficulté</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="raw-data-body">
+                                <!-- Loaded dynamically via app.js -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- View 4: User Management -->
+        <section id="users" class="view-container">
+            <div class="connection-panel">
+                <h2 style="font-family:var(--font-heading); color: var(--primary);">Gestion des Utilisateurs</h2>
+                <p class="connection-desc">
+                    En tant qu'administrateur, vous pouvez ajouter ou supprimer des comptes utilisateurs pour cette plateforme.
+                </p>
+                
+                <div class="dashboard-grid" style="grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 24px;">
+                    <!-- Add User Form -->
+                    <div class="filter-card" style="height: fit-content; padding: 24px;">
+                        <h3 class="filter-title" style="margin-bottom: 16px;">Créer un Nouvel Utilisateur</h3>
+                        <form id="create-user-form" style="display:flex; flex-direction:column; gap:16px;">
+                            <div class="filter-group">
+                                <label for="new-username" style="font-size:13px; font-weight:600;">Nom d'utilisateur</label>
+                                <input type="text" id="new-username" class="form-input" placeholder="ex: jean_ecologue" required autocomplete="username">
+                            </div>
+                            <div class="filter-group">
+                                <label for="new-password" style="font-size:13px; font-weight:600;">Mot de passe</label>
+                                <input type="password" id="new-password" class="form-input" placeholder="Entrez le mot de passe..." required autocomplete="new-password">
+                            </div>
+                            <div class="filter-group">
+                                <label for="new-role" style="font-size:13px; font-weight:600;">Rôle</label>
+                                <select id="new-role" class="form-select" required>
+                                    <option value="user">Lecteur (Standard)</option>
+                                    <option value="admin">Administrateur</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-primary" style="margin-top:8px; padding: 10px;">
+                                ➕ Créer l'utilisateur
+                            </button>
+                        </form>
+                        <p id="create-user-status" class="kpi-desc" style="text-align: center; font-size:13px; font-weight:500; margin-top:12px;"></p>
+                    </div>
+                    
+                    <!-- Users List -->
+                    <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 12px; padding: 24px;">
+                        <h3 class="filter-title" style="margin-bottom: 16px;">Utilisateurs Enregistrés</h3>
+                        <div class="data-table-container" style="max-height: 400px; overflow-y: auto;">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Nom</th>
+                                        <th>Rôle</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="users-list-body">
+                                    <!-- Loaded dynamically via app.js -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Leaflet.js Mapping Library -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    
+    <!-- Chart.js Visualization Library -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- App Data and Scripts -->
+    <script src="mockData.js"></script>
+    <script src="app.js?v=2.0.0"></script>
+
+    <!-- Login Screen Overlay -->
+    <div id="login-overlay" class="login-overlay">
+        <div class="login-card">
+            <div class="brand" style="border:none; justify-content:center; padding-bottom: 0;">
+                <span class="brand-icon">🌿</span>
+                <div class="brand-title" style="font-size:24px;">Greenchoice</div>
+            </div>
+            <h2 style="font-family:var(--font-heading); text-align:center; margin-top:8px; margin-bottom: 24px; font-size:18px; color:var(--text-primary);">Portail de Sélection des Sites</h2>
+            
+            <form id="login-form" style="display:flex; flex-direction:column; gap:16px;">
+                <div class="filter-group">
+                    <label for="login-username">Nom d'utilisateur</label>
+                    <input type="text" id="login-username" class="form-input" placeholder="Entrez votre nom..." required autocomplete="username">
+                </div>
+                <div class="filter-group">
+                    <label for="login-password">Mot de passe</label>
+                    <input type="password" id="login-password" class="form-input" placeholder="Entrez votre mot de passe..." required autocomplete="current-password">
+                </div>
+                <button type="submit" class="btn btn-primary" style="margin-top:8px; padding:12px;">
+                    🔑 Se connecter
+                </button>
+            </form>
+            <p id="login-error" class="kpi-desc text-danger" style="text-align:center; margin-top:12px; font-weight:500;"></p>
+        </div>
+    </div>
+</body>
+</html>
